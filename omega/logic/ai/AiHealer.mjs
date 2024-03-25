@@ -27,12 +27,8 @@ export default class AiHealer {
 
             if(this._creep.healTarget) {
                 const followTarget = this._creep.healTarget;
-                if(!followTarget) {
-                    delete this._creep.healTarget;
-                    return;
-                }
 
-                if(this._creep.getRangeTo(followTarget) > 2) {
+                if(this._creep.getRangeTo(followTarget) > 3) {
                     this._creep.moveTo(followTarget, {ignore: [...CreepUtils.getMyCreeps()]});
                 }
 
