@@ -83,7 +83,7 @@ export default class Commander {
     static isDangerousCreep(creep) {
         if(creep.body.some(b => b.type === TOUGH)) return true;
         if(creep.body.some(b => b.type === HEAL)) return true;
-        if(creep.body.some(b => b.type >= MOVE)) return true;
+        if(creep.body.filter(b => b.type === MOVE).length >= 3) return true;
 
         return false;
     }
