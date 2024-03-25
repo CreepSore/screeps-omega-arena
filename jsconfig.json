@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+      "target": "es6",
+      "module": "commonjs",
+      "allowJs": true,
+      "checkJs": true,
+      "paths": {
+          "game/*": ["./typings/game/*"],
+          "omega/*": ["./omega/typings/*"]
+      }
+    },
+    "screepsArena":  {
+      "typingsVersion": "1.0.1",
+      "disableAutoUpdate": false
+    }
+}
