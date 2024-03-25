@@ -96,10 +96,10 @@ export default class Commander {
     }
 
     static getMaxDistanceToMinions() {
-        if(this.detectAttack()) return 8;
-        if(this.getCommander()?.pushDefense === true) return 8;
+        if(this.detectAttack()) return 6;
+        if(this.getCommander()?.pushDefense === true) return 6;
 
-        return 10;
+        return 8;
     }
 
     static getMinDistanceToCommander() {

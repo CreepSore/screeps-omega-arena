@@ -1,4 +1,5 @@
 import { ATTACK, CARRY, HEAL, MOVE, RANGED_ATTACK, TOUGH, WORK } from "game/constants";
+import { CostMatrix } from "game/path-finder";
 import { Creep, StructureSpawn } from "game/prototypes";
 import { getObjectsByPrototype } from "game/utils";
 
@@ -240,5 +241,14 @@ export default class CreepUtils {
      */
     static getPreviousPosition(creep, offset) {
         return creep.previousPositions[creep.previousPositions.length - 1 - offset];
+    }
+
+    static generateCostMatrix() {
+        const costMatrix = new CostMatrix();
+        for(const creep of this.getMyCreeps()) {
+            costMatrix.set(creep.x, creep.y, 99999);
+        }
+
+        return costMatrix;
     }
 }

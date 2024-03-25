@@ -4,8 +4,9 @@ import { ATTACK, ERR_NOT_IN_RANGE, ERR_NO_BODYPART, RANGED_ATTACK_DISTANCE_RATE 
 import LimitManager from "../../utils/LimitManager.mjs";
 import Commander from "../../utils/Commander.mjs";
 import { Visual } from "game/visual";
-import { getObjectById } from "game/utils";
+import { findPath, getObjectById } from "game/utils";
 import HitboxUtils from "../../utils/HitboxUtils.mjs";
+import { CostMatrix, searchPath } from "game/path-finder";
 
 /**
  * @typedef {"melee" | "ranged" | "unknown"} FighterType
@@ -190,8 +191,7 @@ export default class AiFighter {
     }
 
     pushHandleSpawnAttack() {
-        const enemySpawns = CreepUtils.getEnemySpawns();
-        const target = this._creep.findClosestByPath(enemySpawns);
+        const target = CreepUtils.getEnemySpawns()[0];
 
         if(!target) {
             return false;
@@ -201,15 +201,34 @@ export default class AiFighter {
             Commander.broadcastAttackTarget(target);
         }
 
+        if(this._creep.getRangeTo(target) > 6) {
+            const nextStep = searchPath(this._creep, {
+                range: 6,
+                pos: target
+            }, {
+                costMatrix: CreepUtils.generateCostMatrix()
+            });
+
+            this._creep.moveTo(nextStep.path[0]);
+            return true;
+        }
+
         const attackStatus = this._type === "melee"
             ? this._creep.attack(target)
             : this._creep.rangedAttack(target);
 
         if(attackStatus === ERR_NOT_IN_RANGE || attackStatus === ERR_NO_BODYPART) {
             this._creep.moveTo(target);
+            return true;
+        }
+        else if(attackStatus === 0) {
+            return true;
         }
 
-        return true;
+        console.log("COMMANDER SPAWN ATTACK STATUS: " + String(attackStatus));
+
+
+        return false;
     }
 
     attackPushTarget() {
@@ -223,6 +242,18 @@ export default class AiFighter {
         if(!resolvedTarget || !resolvedTarget.exists) {
             Commander.broadcastAttackTarget(null);
             return false;
+        }
+
+        if(this._creep.getRangeTo(resolvedTarget) > 6) {
+            const nextStep = searchPath(this._creep, {
+                range: 6,
+                pos: resolvedTarget
+            }, {
+                costMatrix: CreepUtils.generateCostMatrix()
+            });
+
+            this._creep.moveTo(nextStep.path[0]);
+            return;
         }
 
         if(this._type === "melee") {
