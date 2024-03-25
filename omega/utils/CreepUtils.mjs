@@ -221,4 +221,24 @@ export default class CreepUtils {
 
         return nextId;
     }
+
+    static updatePreviousPosition() {
+        for(const creep of this.getMyCreeps()) {
+            creep.previousPositions ??= [];
+            const previous = creep.previousPositions[creep.previousPositions.length - 1];
+            if(previous && previous.x === creep.x && previous.y === creep.y) {
+                continue;
+            }
+
+            creep.previousPositions.push({x: creep.x, y: creep.y});
+        }
+    }
+
+    /**
+     * @param {Creep} creep
+     * @param {number} offset Zero base offset
+     */
+    static getPreviousPosition(creep, offset) {
+        return creep.previousPositions[creep.previousPositions.length - 1 - offset];
+    }
 }
