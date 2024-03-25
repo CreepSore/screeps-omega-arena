@@ -1,5 +1,6 @@
 import { Creep, GameObject } from "game/prototypes";
 import CreepUtils from "./CreepUtils.mjs";
+import { HEAL, MOVE, TOUGH } from "game/constants";
 
 export default class Commander {
     /**
@@ -23,6 +24,12 @@ export default class Commander {
         }
     }
 
+    static broadcastPushDefense(status) {
+        for(const creep of [...CreepUtils.getFighters(), ...CreepUtils.getHealers()]) {
+            creep.pushDefense = status;
+        }
+    }
+
     static ensureCommander() {
         const commanders = CreepUtils.getCommanders();
 
@@ -32,7 +39,7 @@ export default class Commander {
 
         const enemySpawns = CreepUtils.getEnemySpawns();
 
-        const newCommander = CreepUtils.getMeleeFighters()
+        const newCommander = CreepUtils.getFighters()
             .sort((a, b) => a.getRangeTo(enemySpawns[0]) - b.getRangeTo(enemySpawns[0]))[0];
 
         if(newCommander) {
@@ -41,6 +48,8 @@ export default class Commander {
     }
 
     static getCommander() {
+        this.ensureCommander();
+
         return CreepUtils.getCommanders()[0];
     }
 
@@ -68,15 +77,35 @@ export default class Commander {
         return maxPath;
     }
 
+    /**
+     * @param {Creep} creep
+     */
+    static isDangerousCreep(creep) {
+        if(creep.body.some(b => b.type === TOUGH)) return true;
+        if(creep.body.some(b => b.type === HEAL)) return true;
+        if(creep.body.some(b => b.type >= MOVE)) return true;
+
+        return false;
+    }
+
     static getMaxPathDistanceToCommander() {
-        return 20;
+        if(this.detectAttack()) return 15;
+        if(this.getCommander()?.pushDefense === true) return 15;
+
+        return 30;
     }
 
     static getMaxDistanceToMinions() {
-        return 15;
+        if(this.detectAttack()) return 8;
+        if(this.getCommander()?.pushDefense === true) return 8;
+
+        return 10;
     }
 
     static getMinDistanceToCommander() {
-        return 3;
+        if(this.detectAttack()) return 1;
+        if(this.getCommander()?.pushDefense === true) return 1;
+
+        return 2;
     }
 }

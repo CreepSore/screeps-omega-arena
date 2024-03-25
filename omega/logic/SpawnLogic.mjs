@@ -26,11 +26,11 @@ export default class SpawnLogic {
             return;
         }
 
-        if(this.ensureFighters()) {
+        if(this.ensureHealers()) {
             return;
         }
 
-        if(this.ensureHealers()) {
+        if(this.ensureFighters()) {
             return;
         }
 
@@ -139,6 +139,7 @@ export default class SpawnLogic {
             if(spawnResult.object) {
                 console.log("Spawned Melee Fighter");
                 spawnResult.object.job = "melee_fighter";
+                spawnResult.object.myId = CreepUtils.getNextId();
             }
             return true;
         }
@@ -157,6 +158,7 @@ export default class SpawnLogic {
             if(spawnResult.object) {
                 console.log("Spawned Ranged Fighter");
                 spawnResult.object.job = "ranged_fighter";
+                spawnResult.object.myId = CreepUtils.getNextId();
             }
             return true;
         }
@@ -168,8 +170,12 @@ export default class SpawnLogic {
         if(CreepUtils.getDefenders().length < LimitManager.getDefenderLimit()) {
             const spawnResult = CreepUtils.getMainSpawn()?.spawnCreep?.(CreepUtils.defenderBody);
             if(spawnResult.object) {
+                const lastJobId = Math.max(...CreepUtils.getDefenders().map(c => c.jobId).filter(Boolean));
+                const nextJobId = isNaN(lastJobId) || lastJobId === -Infinity || lastJobId === Infinity ? 1 : lastJobId + 1;
+
                 console.log("Spawned Defender");
                 spawnResult.object.job = "defender";
+                spawnResult.object.jobId = nextJobId;
             }
             return true;
         }

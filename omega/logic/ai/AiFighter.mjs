@@ -5,6 +5,7 @@ import LimitManager from "../../utils/LimitManager.mjs";
 import Commander from "../../utils/Commander.mjs";
 import { Visual } from "game/visual";
 import { getObjectById } from "game/utils";
+import HitboxUtils from "../../utils/HitboxUtils.mjs";
 
 /**
  * @typedef {"melee" | "ranged" | "unknown"} FighterType
@@ -48,12 +49,7 @@ export default class AiFighter {
                     strokeWidth: 0.3,
                 });
 
-            if(
-                CreepUtils.getFighters().length === LimitManager.getTotalFighterLimit()
-                && CreepUtils.getHealers().length === LimitManager.getHealerLimit()
-            ) {
-                Commander.broadcastPushStatus(true);
-            }
+            this.checkBeginPush();
         }
 
         if(this._creep.isPushing) {
@@ -71,43 +67,90 @@ export default class AiFighter {
 
         const spawnPos = CreepUtils.getMainSpawn();
         const targetPos = {
-            x: spawnPos.x,
-            y: spawnPos.y + (this._creep.isCommander ? 12 : 10),
+            x: spawnPos.x + (this._creep.isCommander ? 6 : 4),
+            y: spawnPos.y,
         }
 
         this._creep.moveTo(targetPos);
     }
 
-    handlePush() {
-        if(Commander.detectAttack()) {
-            this.pushHandleSyncedAttack();
+    checkBeginPush() {
+        if(
+            CreepUtils.getFighters().length === LimitManager.getTotalFighterLimit()
+            && CreepUtils.getHealers().length === LimitManager.getHealerLimit()
+        ) {
+            Commander.broadcastPushStatus(true);
         }
+    }
+
+    handlePush() {
+        const enemySpawn = CreepUtils.getEnemySpawns()[0];
+        if(this._creep.isCommander && this._creep.getRangeTo(enemySpawn) < 10) {
+            if(this.pushHandleSpawnAttack()) {
+                return;
+            }
+        }
+
+        this.pushHandleSyncedAttack();
 
         if(this.attackPushTarget()) {
             return;
         }
 
         if(this._creep.isCommander) {
-            if(this.waitForMinions()) {
-                return;
-            }
+            return this.handleCommanderActions();
+        }
 
-            if(this.pushHandleSpawnAttack()) {
-                return;
+        if(this.handleNonCommanderActions()) {
+            return;
+        }
+    }
+
+    handleCommanderActions() {
+        const isInUpperHalf = this._creep.y < 50;
+        const targetHitbox = isInUpperHalf
+            ? HitboxUtils.getUpperHitbox()
+            : HitboxUtils.getLowerHitbox();
+
+        if(CreepUtils.getEnemyCreeps().filter(c => HitboxUtils.isTouchingHitbox(c, targetHitbox)).length > 3) {
+            if(this._creep.x > 25) {
+                Commander.broadcastPushDefense(true);
             }
         }
-        else {
-            const commander = Commander.getCommander();
-
-            if(this._creep.getRangeTo(commander) <= Commander.getMinDistanceToCommander()) {
-                return;
-            }
-
-            const moveTo = commander.previousPositions[commander.previousPositions.length - 3];
-            if(moveTo) {
-                this._creep.moveTo(moveTo, {ignore: [commander]});
-            }
+        else
+        {
+            Commander.broadcastPushDefense(false);
         }
+
+        if(this._creep.pushDefense) {
+            return;
+        }
+
+        if(this.waitForMinions()) {
+            return;
+        }
+
+        if(this.pushHandleSpawnAttack()) {
+            return;
+        }
+
+        console.log("COMMANDER IS IDLING!!!");
+        return;
+    }
+
+    handleNonCommanderActions() {
+        const commander = Commander.getCommander();
+
+        if(this._creep.getRangeTo(commander) <= Commander.getMinDistanceToCommander()) {
+            return true;
+        }
+
+        const moveTo = commander.previousPositions[commander.previousPositions.length - 1];
+        if(moveTo) {
+            this._creep.moveTo(moveTo, {ignore: [commander]});
+        }
+
+        return true;
     }
 
     waitForMinions() {
@@ -129,8 +172,13 @@ export default class AiFighter {
     }
 
     pushHandleSyncedAttack() {
+        if(this._creep.pushTarget?.exists === true) {
+            return;
+        }
+
         const inRange = CreepUtils.getEnemyCreepsSortedByRange(this._creep)
-            .filter(c => c.getRangeTo(this._creep) < 6)[0];
+            .filter(ec => (Commander.detectAttack() || Commander.isDangerousCreep(ec)) && CreepUtils.getAverageDistance(CreepUtils.getFighters(), ec) < 9)
+            .sort((a, b) => CreepUtils.getAverageDistance(CreepUtils.getFighters(), a) - CreepUtils.getAverageDistance(CreepUtils.getFighters(), b))[0];
 
         if(!inRange) {
             return;
@@ -153,13 +201,15 @@ export default class AiFighter {
             Commander.broadcastAttackTarget(target);
         }
 
-        const attackStatus = this._creep.attack(target);
+        const attackStatus = this._type === "melee"
+            ? this._creep.attack(target)
+            : this._creep.rangedAttack(target);
 
         if(attackStatus === ERR_NOT_IN_RANGE) {
             this._creep.moveTo(target);
         }
 
-        return false;
+        return true;
     }
 
     attackPushTarget() {

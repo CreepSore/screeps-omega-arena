@@ -1,18 +1,18 @@
 export default class LimitManager {
     static getCollectorLimit() {
-        return 3;
+        return 2;
     }
 
     static getMeleeFighterLimit() {
-        return 6;
+        return 0;
     }
 
     static getRangedFighterLimit() {
-        return 4;
+        return 8;
     }
 
     static getHealerLimit() {
-        return 4;
+        return 2;
     }
 
     static getMinerLimit() {
@@ -21,10 +21,6 @@ export default class LimitManager {
 
     static getBuilderLimit() {
         return 0;
-    }
-
-    static getCommanderLimit() {
-        return 1;
     }
 
     static getDefenderLimit() {

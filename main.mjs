@@ -17,6 +17,11 @@ export function loop() {
 
     for(const creep of CreepUtils.getMyCreeps()) {
         creep.previousPositions ??= [];
+        const previous = creep.previousPositions[creep.previousPositions.length - 1];
+        if(previous && previous.x === creep.x && previous.y === creep.y) {
+            continue;
+        }
+
         creep.previousPositions.push({x: creep.x, y: creep.y});
     }
 

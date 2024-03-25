@@ -3,14 +3,14 @@ import { Creep, StructureSpawn } from "game/prototypes";
 import { getObjectsByPrototype } from "game/utils";
 
 export default class CreepUtils {
-    static commanderBody = [ATTACK, ATTACK, MOVE];
-    static meleeFighterBody = [ATTACK, ATTACK, MOVE];
-    static rangedFighterBody = [RANGED_ATTACK, RANGED_ATTACK, MOVE];
-    static collectorBody = [CARRY, MOVE, MOVE];
+    static commanderBody = [RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE];
+    static meleeFighterBody = [ATTACK, MOVE, ATTACK, MOVE];
+    static rangedFighterBody = [RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, MOVE, MOVE];
+    static collectorBody = [CARRY, CARRY, MOVE];
     static minerBody = [WORK, CARRY, MOVE];
     static builderBody = [WORK, CARRY, MOVE];
-    static healerBody = [HEAL, MOVE];
-    static defenderBody = [RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, MOVE];
+    static healerBody = [HEAL, HEAL, MOVE];
+    static defenderBody = [RANGED_ATTACK, RANGED_ATTACK];
 
     /**
      * @param {string[]} body
@@ -114,55 +114,55 @@ export default class CreepUtils {
 
     static getCommanders() {
         return getObjectsByPrototype(Creep)
-            .filter(c => c.my && !c.spawning && CreepUtils.creepIsCommander(c));
+            .filter(c => c.my && !c.spawning && c.exists && CreepUtils.creepIsCommander(c));
     }
 
     static getCollectors() {
         return getObjectsByPrototype(Creep)
-            .filter(c => c.my && !c.spawning && CreepUtils.creepIsCollector(c));
+            .filter(c => c.my && !c.spawning && c.exists && CreepUtils.creepIsCollector(c));
     }
 
     static getHealers() {
         return getObjectsByPrototype(Creep)
-            .filter(c => c.my && !c.spawning && CreepUtils.creepIsHealer(c));
+            .filter(c => c.my && !c.spawning && c.exists && CreepUtils.creepIsHealer(c));
     }
 
     static getBuilders() {
         return getObjectsByPrototype(Creep)
-            .filter(c => c.my && !c.spawning && CreepUtils.creepIsBuilder(c));
+            .filter(c => c.my && !c.spawning && c.exists && CreepUtils.creepIsBuilder(c));
     }
 
     static getMiners() {
         return getObjectsByPrototype(Creep)
-            .filter(c => c.my && !c.spawning && CreepUtils.creepIsMiner(c));
+            .filter(c => c.my && !c.spawning && c.exists && CreepUtils.creepIsMiner(c));
     }
 
     static getFighters() {
         return getObjectsByPrototype(Creep)
-            .filter(c => c.my && !c.spawning && CreepUtils.creepIsFighter(c));
+            .filter(c => c.my && !c.spawning && c.exists && CreepUtils.creepIsFighter(c));
     }
 
     static getMeleeFighters() {
         return getObjectsByPrototype(Creep)
-            .filter(c => c.my && !c.spawning && CreepUtils.creepIsMeleeFighter(c));
+            .filter(c => c.my && !c.spawning && c.exists && CreepUtils.creepIsMeleeFighter(c));
     }
 
     static getRangedFighters() {
         return getObjectsByPrototype(Creep)
-            .filter(c => c.my && !c.spawning && CreepUtils.creepIsRangedFighter(c));
+            .filter(c => c.my && !c.spawning && c.exists && CreepUtils.creepIsRangedFighter(c));
     }
 
     static getDefenders() {
         return getObjectsByPrototype(Creep)
-            .filter(c => c.my && !c.spawning && CreepUtils.creepIsDefender(c))
+            .filter(c => c.my && !c.spawning && c.exists && CreepUtils.creepIsDefender(c))
     }
 
     static getMyCreeps() {
-        return getObjectsByPrototype(Creep).filter(c => c.my && !c.spawning);
+        return getObjectsByPrototype(Creep).filter(c => c.my && !c.spawning && c.exists);
     }
 
     static getEnemyCreeps() {
-        return getObjectsByPrototype(Creep).filter(c => !c.my && !c.spawning);
+        return getObjectsByPrototype(Creep).filter(c => !c.my && !c.spawning && c.exists);
     }
 
     /**
@@ -205,5 +205,20 @@ export default class CreepUtils {
 
     static getMainSpawn() {
         return getObjectsByPrototype(StructureSpawn).find(s => s.my);
+    }
+
+    /**
+     * @param {import("game/prototypes").GameObject[]} from
+     * @param {import("game/prototypes").Position} to
+     */
+    static getAverageDistance(from, to) {
+        return from.map(f => f.getRangeTo(to)).reduce((a, b) => a + b, 0) / from.length;
+    }
+
+    static getNextId() {
+        const lastId = Math.max(...CreepUtils.getMyCreeps().map(c => c.myId).filter(Boolean));
+        const nextId = isNaN(lastId) || lastId === -Infinity || lastId === Infinity ? 1 : lastId + 1;
+
+        return nextId;
     }
 }
