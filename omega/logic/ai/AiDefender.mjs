@@ -47,12 +47,15 @@ export default class AiDefender {
     attackClosestTarget() {
         const mySpawn = CreepUtils.getMainSpawn();
 
-        const target = CreepUtils.getEnemyCreeps()
-            .filter(ec =>
-                ec.getRangeTo(mySpawn) <= ec.body.filter(b => b.type === MOVE).length + this._creep.getRangeTo(mySpawn) + (ec.body.some(b => b.type === RANGED_ATTACK) ? 5 : 1)
-                || (ec.getRangeTo(this._creep) < 15 && ec.findPathTo(this._creep).length < 15)
-            )
-            .sort((a, b) => a.hits - b.hits)[0];
+        let target = this._creep.body.some(b => b.type === MOVE)
+            ? CreepUtils.getEnemyCreeps()
+                .filter(ec =>
+                    ec.getRangeTo(mySpawn) <= ec.body.filter(b => b.type === MOVE).length + this._creep.getRangeTo(mySpawn) + (ec.body.some(b => b.type === RANGED_ATTACK) ? 5 : 1)
+                    || (ec.getRangeTo(this._creep) < 15 && ec.findPathTo(this._creep).length < 15)
+                )
+                .sort((a, b) => a.hits - b.hits)[0]
+            : this._creep.findClosestByPath(CreepUtils.getEnemyCreeps().sort((a, b) => a.hits - b.hits));
+
 
         if(!target) {
             return false;
@@ -61,8 +64,6 @@ export default class AiDefender {
         const attackResult = this._creep.body.some(b => b.type === ATTACK)
             ? this._creep.attack(target)
             : this._creep.rangedAttack(target);
-
-        console.log(attackResult);
 
         if(attackResult === ERR_NOT_IN_RANGE) {
             this._creep.moveTo(target);

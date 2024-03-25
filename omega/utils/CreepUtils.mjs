@@ -1,4 +1,4 @@
-import { ATTACK, CARRY, HEAL, MOVE, RANGED_ATTACK, WORK } from "game/constants";
+import { ATTACK, CARRY, HEAL, MOVE, RANGED_ATTACK, TOUGH, WORK } from "game/constants";
 import { Creep, StructureSpawn } from "game/prototypes";
 import { getObjectsByPrototype } from "game/utils";
 
@@ -9,7 +9,7 @@ export default class CreepUtils {
     static collectorBody = [CARRY, CARRY, MOVE];
     static minerBody = [WORK, CARRY, MOVE];
     static builderBody = [WORK, CARRY, MOVE];
-    static healerBody = [HEAL, HEAL, MOVE];
+    static healerBody = [TOUGH, HEAL, HEAL, MOVE];
     static defenderBody = [RANGED_ATTACK, RANGED_ATTACK];
 
     /**

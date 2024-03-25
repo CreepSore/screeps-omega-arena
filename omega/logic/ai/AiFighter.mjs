@@ -1,6 +1,6 @@
 import { Creep } from "game/prototypes";
 import CreepUtils from "../../utils/CreepUtils.mjs";
-import { ATTACK, ERR_NOT_IN_RANGE, RANGED_ATTACK_DISTANCE_RATE } from "game/constants";
+import { ATTACK, ERR_NOT_IN_RANGE, ERR_NO_BODYPART, RANGED_ATTACK_DISTANCE_RATE } from "game/constants";
 import LimitManager from "../../utils/LimitManager.mjs";
 import Commander from "../../utils/Commander.mjs";
 import { Visual } from "game/visual";
@@ -113,7 +113,7 @@ export default class AiFighter {
             : HitboxUtils.getLowerHitbox();
 
         if(CreepUtils.getEnemyCreeps().filter(c => HitboxUtils.isTouchingHitbox(c, targetHitbox)).length > 3) {
-            if(this._creep.x > 25) {
+            if(this._creep.x > 20) {
                 Commander.broadcastPushDefense(true);
             }
         }
@@ -172,9 +172,9 @@ export default class AiFighter {
     }
 
     pushHandleSyncedAttack() {
-        if(this._creep.pushTarget?.exists === true) {
-            return;
-        }
+        // if(this._creep.pushTarget?.exists === true) {
+        //     return;
+        // }
 
         const inRange = CreepUtils.getEnemyCreepsSortedByRange(this._creep)
             .filter(ec => (Commander.detectAttack() || Commander.isDangerousCreep(ec)) && CreepUtils.getAverageDistance(CreepUtils.getFighters(), ec) < 9)
@@ -205,7 +205,7 @@ export default class AiFighter {
             ? this._creep.attack(target)
             : this._creep.rangedAttack(target);
 
-        if(attackStatus === ERR_NOT_IN_RANGE) {
+        if(attackStatus === ERR_NOT_IN_RANGE || attackStatus === ERR_NO_BODYPART) {
             this._creep.moveTo(target);
         }
 
