@@ -251,4 +251,12 @@ export default class CreepUtils {
 
         return costMatrix;
     }
+
+    /**
+     * @returns {"left"|"right"}
+     */
+    static getMySide() {
+        const mySpawn = this.getMainSpawn();
+        return mySpawn.x < 45 ? "left" : "right";
+    }
 }

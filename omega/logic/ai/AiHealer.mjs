@@ -17,7 +17,7 @@ export default class AiHealer {
 
     tick() {
         const target = CreepUtils.getMyCreeps()
-            .filter(c => c.id !== this._creep.id && c.hits < c.hitsMax && c.getRangeTo(this._creep) <= RANGED_ATTACK_DISTANCE_RATE)
+            .filter(c => c.id !== this._creep.id && c.hits < c.hitsMax && c.getRangeTo(this._creep) <= 6)
             .sort((a, b) => CreepUtils.healthPercentage(a) - CreepUtils.healthPercentage(b))[0];
 
         if(!target) {
@@ -41,9 +41,10 @@ export default class AiHealer {
         // @ts-ignore
         this._creep.healTarget = target.id;
 
-        const healStatus = target.getRangeTo(this._creep) === 1
-            ? this._creep.heal(target)
-            : this._creep.rangedHeal(target);
+        let healStatus = this._creep.heal(target);
+        if(healStatus === ERR_NOT_IN_RANGE) {
+            healStatus = this._creep.rangedHeal(target);
+        }
 
         if(healStatus === ERR_NOT_IN_RANGE) {
             this._creep.moveTo(target);

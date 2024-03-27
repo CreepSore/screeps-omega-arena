@@ -1,8 +1,12 @@
 import { Creep, GameObject } from "game/prototypes";
 import CreepUtils from "./CreepUtils.mjs";
-import { HEAL, MOVE, TOUGH } from "game/constants";
+import { ATTACK, HEAL, MOVE, RANGED_ATTACK, TOUGH } from "game/constants";
 
 export default class Commander {
+    static getMinDefenders() {
+        return 6;
+    }
+
     /**
      * @static
      * @param {GameObject} target
@@ -82,7 +86,8 @@ export default class Commander {
      */
     static isDangerousCreep(creep) {
         if(creep.body.some(b => b.type === TOUGH)) return true;
-        if(creep.body.some(b => b.type === HEAL)) return true;
+        if(creep.body.some(b => (b.type === ATTACK || b.type === RANGED_ATTACK) && b.hits > 0)) return true;
+        if(creep.body.some(b => b.type === HEAL && b.hits > 0)) return true;
         if(creep.body.filter(b => b.type === MOVE).length >= 3) return true;
 
         return false;

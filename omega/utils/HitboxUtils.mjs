@@ -32,7 +32,7 @@ export default class HitboxUtils {
         }
     }
 
-    static getUpperHitbox() {
+    static getUpperHalfHitbox() {
         return {
             from: {
                 x: 0,
@@ -45,7 +45,7 @@ export default class HitboxUtils {
         }
     }
 
-    static getLowerHitbox() {
+    static getLowerHalfHitbox() {
         return {
             from: {
                 x: 0,
@@ -55,6 +55,44 @@ export default class HitboxUtils {
                 x: 99,
                 y: 99,
             },
+        }
+    }
+
+    /**
+     * @param {number} offset Offset from the top
+     * @param {"vertical"|"horizontal"} direction
+     */
+    static getQuadHitbox(offset, direction) {
+        const size = 25;
+        const offsetXY = offset * size;
+        return {
+            from: {
+                x: direction === "horizontal" ? 0 : offsetXY,
+                y: direction === "vertical" ? 0 : offsetXY,
+            },
+            to: {
+                x: direction === "horizontal" ? 99 : offsetXY + size,
+                y: direction === "vertical" ? 99 : offsetXY + size,
+            }
+        }
+    }
+
+    /**
+     * @param {number} offset Offset from the top
+     * @param {"vertical"|"horizontal"} direction
+     */
+    static getThirdHitbox(offset, direction) {
+        const size = 33;
+        const offsetXY = offset * size;
+        return {
+            from: {
+                x: direction === "horizontal" ? 0 : offsetXY,
+                y: direction === "vertical" ? 0 : offsetXY,
+            },
+            to: {
+                x: direction === "horizontal" ? 99 : offsetXY + size,
+                y: direction === "vertical" ? 99 : offsetXY + size,
+            }
         }
     }
 }

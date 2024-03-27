@@ -1,12 +1,12 @@
 import { Creep } from "game/prototypes";
 import CreepUtils from "../../utils/CreepUtils.mjs";
-import { ATTACK, ERR_NOT_IN_RANGE, ERR_NO_BODYPART, RANGED_ATTACK_DISTANCE_RATE } from "game/constants";
+import { ATTACK, ERR_NOT_IN_RANGE, ERR_NO_BODYPART, RANGED_ATTACK, RANGED_ATTACK_DISTANCE_RATE } from "game/constants";
 import LimitManager from "../../utils/LimitManager.mjs";
 import Commander from "../../utils/Commander.mjs";
 import { Visual } from "game/visual";
-import { findPath, getObjectById } from "game/utils";
+import { getObjectById, getTicks } from "game/utils";
 import HitboxUtils from "../../utils/HitboxUtils.mjs";
-import { CostMatrix, searchPath } from "game/path-finder";
+import { searchPath } from "game/path-finder";
 
 /**
  * @typedef {"melee" | "ranged" | "unknown"} FighterType
@@ -68,7 +68,7 @@ export default class AiFighter {
 
         const spawnPos = CreepUtils.getMainSpawn();
         const targetPos = {
-            x: spawnPos.x + (this._creep.isCommander ? 6 : 4),
+            x: spawnPos.x + (this._creep.isCommander ? 6 : 4) * (CreepUtils.getMySide() === "left" ? 1 : -1),
             y: spawnPos.y,
         }
 
@@ -108,13 +108,11 @@ export default class AiFighter {
     }
 
     handleCommanderActions() {
-        const isInUpperHalf = this._creep.y < 50;
-        const targetHitbox = isInUpperHalf
-            ? HitboxUtils.getUpperHitbox()
-            : HitboxUtils.getLowerHitbox();
+        const targetHitbox = HitboxUtils.getThirdHitbox(1, "vertical");
 
-        if(CreepUtils.getEnemyCreeps().filter(c => HitboxUtils.isTouchingHitbox(c, targetHitbox)).length > 3) {
-            if(this._creep.x > 20) {
+        if(CreepUtils.getEnemyCreeps().filter(c => HitboxUtils.isTouchingHitbox(c, targetHitbox) && c.body.some(b => b.type === ATTACK || b.type === RANGED_ATTACK)).length > 3) {
+            const side = CreepUtils.getMySide();
+            if((side === "left" && this._creep.x > 20) || (side === "right" && this._creep.x < 80)) {
                 Commander.broadcastPushDefense(true);
             }
         }
@@ -131,12 +129,36 @@ export default class AiFighter {
             return;
         }
 
+        if(this.defendSpawn()) {
+            return;
+        }
+
         if(this.pushHandleSpawnAttack()) {
             return;
         }
 
         console.log("COMMANDER IS IDLING!!!");
         return;
+    }
+
+    defendSpawn() {
+        if(CreepUtils.getDefenders().length < Commander.getMinDefenders()) {
+            return false;
+        }
+
+        const mySpawn = CreepUtils.getMainSpawn();
+        const targetHitbox = CreepUtils.getMySide() === "left"
+            ? HitboxUtils.getThirdHitbox(0, "vertical")
+            : HitboxUtils.getThirdHitbox(2, "vertical");
+
+        const enemiesDetected = CreepUtils.getEnemyCreeps().some(c => HitboxUtils.isTouchingHitbox(c, targetHitbox) && c.body.some(b => b.type === ATTACK || b.type === RANGED_ATTACK));
+        if(!enemiesDetected) {
+            return false;
+        }
+
+        this._creep.moveTo(mySpawn);
+
+        return true;
     }
 
     handleNonCommanderActions() {
@@ -152,6 +174,27 @@ export default class AiFighter {
         }
 
         return true;
+    }
+
+    getEnemyQuad() {
+        const enemies = CreepUtils.getEnemyCreeps().filter(c => c.body.some(b => b.type === ATTACK || b.type === RANGED_ATTACK));
+        const upperHitbox = HitboxUtils.getThirdHitbox(0, "horizontal");
+        const lowerHitbox = HitboxUtils.getThirdHitbox(2, "horizontal");
+        const overlappingUpper = enemies.some(c => HitboxUtils.isTouchingHitbox(c, upperHitbox));
+        const overlappingLower = enemies.some(c => HitboxUtils.isTouchingHitbox(c, lowerHitbox));
+
+        if(overlappingUpper) {
+            return "upper";
+        }
+        else if(overlappingLower) {
+            return "lower";
+        }
+
+        if(getTicks() > 400) {
+            return "skip";
+        }
+
+        return "wait";
     }
 
     waitForMinions() {
@@ -191,6 +234,11 @@ export default class AiFighter {
     }
 
     pushHandleSpawnAttack() {
+        const enemyQuad = this.getEnemyQuad();
+        if(enemyQuad === "wait") {
+            return;
+        }
+
         const target = CreepUtils.getEnemySpawns()[0];
 
         if(!target) {
@@ -202,11 +250,21 @@ export default class AiFighter {
         }
 
         if(this._creep.getRangeTo(target) > 6) {
+            const costMatrix = CreepUtils.generateCostMatrix();
+            if(enemyQuad === "upper" || enemyQuad === "lower") {
+                const from = enemyQuad === "upper" ? 45 : 0;
+                const to = enemyQuad === "upper" ? 99 : 45;
+                for(let y = from; y < to; y++) {
+                    costMatrix.set(15, y, 99999);
+                }
+            }
+
+
             const nextStep = searchPath(this._creep, {
                 range: 6,
                 pos: target
             }, {
-                costMatrix: CreepUtils.generateCostMatrix()
+                costMatrix
             });
 
             this._creep.moveTo(nextStep.path[0]);
@@ -226,7 +284,6 @@ export default class AiFighter {
         }
 
         console.log("COMMANDER SPAWN ATTACK STATUS: " + String(attackStatus));
-
 
         return false;
     }

@@ -54,7 +54,7 @@ export default class AiDefender {
                     || (ec.getRangeTo(this._creep) < 15 && ec.findPathTo(this._creep).length < 15)
                 )
                 .sort((a, b) => a.hits - b.hits)[0]
-            : this._creep.findClosestByPath(CreepUtils.getEnemyCreeps().sort((a, b) => a.hits - b.hits));
+            : this._creep.findClosestByRange(CreepUtils.getEnemyCreeps().sort((a, b) => a.hits - b.hits));
 
 
         if(!target) {
